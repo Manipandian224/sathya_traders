@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+/* Tailwind v4 Standard Import */
+@import "tailwindcss";
+
+/* Tailwind v4 Configuration via CSS Variables */
+@theme {
+  --color-primary-light: #f39c12;
+  --color-primary: #E67E22;
+  --color-primary-dark: #d35400;
+
+  --color-secondary-light: #795548;
+  --color-secondary: #5D4037;
+  --color-secondary-dark: #3e2723;
+
+  --color-tertiary: #F1C40F;
+  --color-neutral-bg: #FAF9F6;
+  
+  --font-heading: "Playfair Display", serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-neutral-bg);
+    color: var(--color-secondary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  ::selection {
+    background-color: var(--color-primary-light);
+    color: #fff;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-secondary font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm ;
+  }
+}

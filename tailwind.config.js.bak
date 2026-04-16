@@ -1,0 +1,33 @@
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          light: '#f39c12',
+          DEFAULT: '#E67E22',
+          dark: '#d35400',
+        },
+        secondary: {
+          light: '#795548',
+          DEFAULT: '#5D4037',
+          dark: '#3e2723',
+        },
+        tertiary: {
+          DEFAULT: '#F1C40F',
+        },
+        neutral: {
+          bg: '#FAF9F6',
+        }
+      },
+      fontFamily: {
+        heading: ['"Playfair Display"', 'serif'],
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}
