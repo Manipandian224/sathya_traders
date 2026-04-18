@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 import { nanoid } from 'nanoid';
-import { Cashfree, CFEnvironment } from 'cashfree-pg';
+import { Cashfree } from 'cashfree-pg';
 import { sendWhatsAppMessage } from '../utils/twilio.js';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -15,8 +15,9 @@ const rtdbUrl = process.env.FIREBASE_DATABASE_URL;
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
 Cashfree.XEnvironment = process.env.CASHFREE_ENV === 'production' 
-  ? CFEnvironment.PRODUCTION 
-  : CFEnvironment.SANDBOX;
+  ? Cashfree.Environment.PRODUCTION 
+  : Cashfree.Environment.SANDBOX;
+
 
 if (fs.existsSync(serviceAccountPath)) {
   const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));

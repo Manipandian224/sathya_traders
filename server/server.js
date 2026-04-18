@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import twilio from 'twilio';
-import { Cashfree, CFEnvironment } from 'cashfree-pg';
+import { Cashfree } from 'cashfree-pg';
 import orderRoutes from './routes/orderRoutes.js';
 
 dotenv.config();
@@ -18,8 +18,8 @@ app.use(express.json());
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
 Cashfree.XEnvironment = process.env.CASHFREE_ENV === 'production' 
-  ? CFEnvironment.PRODUCTION 
-  : CFEnvironment.SANDBOX;
+  ? Cashfree.Environment.PRODUCTION 
+  : Cashfree.Environment.SANDBOX;
 
 // Twilio Setup
 const accountSid = process.env.TWILIO_SID || process.env.TWILIO_ACCOUNT_SID;

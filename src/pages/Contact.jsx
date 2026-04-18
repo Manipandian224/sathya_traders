@@ -32,13 +32,15 @@ export default function Contact() {
           import.meta.env.VITE_EMAILJS_SERVICE_ID,
           import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
           {
-            from_name: formData.name,
-            from_email: formData.email,
-            from_phone: formData.phone,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
             subject: formData.subject,
             message: formData.message,
+            time: new Date().toLocaleString(),
             to_name: "Sathya Traders Owner"
-          }
+          },
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
         );
       } catch (emailError) {
         console.error("Email notification failed:", emailError);

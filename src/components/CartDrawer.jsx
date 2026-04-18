@@ -71,11 +71,11 @@ export default function CartDrawer() {
                         </div>
                         <div className="flex items-center justify-between w-full">
                            <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm">
-                              <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-gray-50 rounded-l-lg text-gray-600">
+                              <button disabled={item.quantity <= 40} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-gray-50 rounded-l-lg text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                                 <Minus size={16} />
                               </button>
                               <span className="w-12 text-center text-sm font-medium">{item.quantity} kg</span>
-                              <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:bg-gray-50 rounded-r-lg text-gray-600">
+                              <button disabled={item.quantity >= 500} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:bg-gray-50 rounded-r-lg text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
                                 <Plus size={16} />
                               </button>
                            </div>

@@ -11,7 +11,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [weight, setWeight] = React.useState(1);
+  const [weight, setWeight] = React.useState(40);
   const [dbStats, setDbStats] = React.useState({ averageRating: 0, totalReviews: 0 });
   
   // Find product by ID
@@ -96,8 +96,8 @@ export default function ProductDetail() {
                  <div className="flex items-center gap-6">
                     <input 
                       type="range" 
-                      min="1" 
-                      max="100" 
+                      min="40" 
+                      max="500" 
                       value={weight} 
                       onChange={(e) => setWeight(parseInt(e.target.value))}
                       className="flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
@@ -105,11 +105,11 @@ export default function ProductDetail() {
                     <div className="flex items-center bg-gray-100 px-6 py-3 rounded-2xl border border-gray-200 min-w-[120px] justify-center">
                        <input 
                           type="number" 
-                          min="1" 
-                          max="100"
+                          min="40" 
+                          max="500"
                           value={weight}
-                          onChange={(e) => setWeight(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
-                          className="bg-transparent font-bold text-2xl text-secondary w-14 text-center focus:outline-none"
+                          onChange={(e) => setWeight(Math.min(500, Math.max(40, parseInt(e.target.value) || 40)))}
+                          className="bg-transparent font-bold text-2xl text-secondary w-16 text-center focus:outline-none"
                        />
                        <span className="font-bold text-secondary ml-1">kg</span>
                     </div>

@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-2xl font-heading font-bold text-tertiary mb-4">Sathya Traders</h3>
             <p className="text-neutral-bg/80 max-w-sm">
-              Bringing the authentic taste of traditional homemade appalams and snacks to your household. Premium quality, unforgettable flavor.
+              Sathya Traders, established in 2000, is a trusted company known for quality products and reliable service. We focus on customer satisfaction, transparency, and continuous growth to deliver the best experience.
             </p>
           </div>
           <div>
@@ -29,7 +29,7 @@ export default function Footer() {
               <a href="#" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
                 <Mail size={20} />
               </a>
-              <a href="#" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+              <a href="https://maps.app.goo.gl/szFDneifrcyNrMiTA" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
                 <MapPin size={20} />
               </a>
             </div>

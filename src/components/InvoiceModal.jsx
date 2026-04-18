@@ -73,22 +73,6 @@ export default function InvoiceModal({ isOpen, onClose, order }) {
           .header-left { float: left; width: 60%; }
           .header-right { float: right; width: 35%; text-align: right; }
 
-          .logo-box {
-            background: #ff6b00;
-            width: 50px;
-            height: 50px;
-            padding: 10px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            display: inline-block;
-          }
-          .logo-box img { 
-            width: 100%; 
-            height: 100%; 
-            object-contain: contain; 
-            filter: brightness(0) invert(1);
-          }
-
           h1 { margin: 0; font-size: 28px; color: #1a1a1a; letter-spacing: -1px; }
           .tagline { margin: 0; color: #ff6b00; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
@@ -168,15 +152,12 @@ export default function InvoiceModal({ isOpen, onClose, order }) {
           <!-- Header -->
           <div class="header">
             <div class="header-left">
-              <div class="logo-box">
-                <img src="${logoUrl}" alt="S">
-              </div>
               <h1>Sathya Traders</h1>
               <p class="tagline">Since 2000</p>
               <div style="margin-top: 15px; font-size: 11px; color: #666;">
-                <p style="margin: 2px 0;">123 Madurai East, Tamil Nadu - 625001</p>
-                <p style="margin: 2px 0;">Phone: +91 98765 43210</p>
-                <p style="margin: 2px 0;">Website: www.sathyatraders.com</p>
+                <p style="margin: 2px 0; max-width: 250px; line-height: 1.3;">7a, muthukaruppa pillai lane, south street, anuppanadi, madurai, tamil nadu, 625009</p>
+                <p style="margin: 2px 0;">Phone: +91 9659798598</p>
+                <p style="margin: 2px 0;">Website: www.SathyaTraders.in</p>
               </div>
             </div>
             <div class="header-right">
@@ -255,7 +236,7 @@ export default function InvoiceModal({ isOpen, onClose, order }) {
                 <p style="max-width: 300px;">
                   1. Goods once sold cannot be returned.<br>
                   2. Check items at the time of delivery.<br>
-                  3. For any queries, please call +91 98765 43210.
+                  3. For any queries, please call +91 9659798598.
                 </p>
               </div>
               <div class="signature">

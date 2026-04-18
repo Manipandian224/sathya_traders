@@ -1,34 +1,26 @@
 {
   "rules": {
     "users": {
-      // Only admins can see the full list of users
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
-        // Users can read/write their own records; Admins can do anything
         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
       }
     },
     "orders": {
-      // Admin can read all; Users can only read via query filtering for their own userId
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (query.orderByChild === 'userId' && query.equalTo === auth.uid))",
       ".indexOn": ["userId", "createdAt"], 
       "$orderId": {
-        // Users can read their own order if userId matches
         ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && (!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
       }
     },
     "contacts": {
-      // Only admins can read contact messages
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-      // Anyone can submit a contact message
       ".write": "true"
     },
     "reviews": {
-      // Anyone can read reviews
       ".read": "true",
-      // Authenticated users can write (new reviews); Admins can delete
       ".write": "auth != null",
       ".indexOn": ["productId", "userId"],
       "$reviewId": {
@@ -40,14 +32,12 @@
       "$productId": {
         "averageRating": { ".write": "auth != null" },
         "totalReviews": { ".write": "auth != null" },
-        // Full product update still requires admin
         ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       },
       ".indexOn": ["averageRating"]
     },
     "addresses": {
       "$uid": {
-        // Users can manage their own addresses; Admins have full access
         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
       }

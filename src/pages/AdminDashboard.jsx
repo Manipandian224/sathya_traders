@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { 
   Package, ShoppingCart, IndianRupee, Bell, AlertCircle, 
   MessageSquare, Star, Users, LayoutDashboard, ChevronRight, 
-  Trash2, CheckCircle, Clock, Truck, Shield, Eye
+  Trash2, CheckCircle, Clock, Truck, Shield, Eye, Plus, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { rtdb } from '../firebase/config';
 import { ref, onValue, update, remove, query, limitToLast } from 'firebase/database';
@@ -34,6 +34,9 @@ export default function AdminDashboard() {
   const [contacts, setContacts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [users, setUsers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', category: 'Appalam', description: '' });
+  const [addingProduct, setAddingProduct] = useState(false);
   const [stats, setStats] = useState({
     revenue: 0,
     orders: 0,
@@ -96,11 +99,19 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
+    const unsubProducts = onValue(ref(rtdb, 'products'), (snapshot) => {
+      const data = snapshot.exists() ? Object.entries(snapshot.val()).map(([id, val]) => ({ ...val, _id: id })) : [];
+      setProducts(data);
+    }, (error) => {
+      console.error('Products Error:', error);
+    });
+
     return () => {
       unsubOrders();
       unsubContacts();
       unsubReviews();
       unsubUsers();
+      unsubProducts();
     };
   };
 
@@ -147,6 +158,48 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.price) return toast.error('Name and price are required');
+    setAddingProduct(true);
+    try {
+      const { push: rtdbPush, ref: rtdbRef, serverTimestamp } = await import('firebase/database');
+      await rtdbPush(rtdbRef(rtdb, 'products'), {
+        ...newProduct,
+        price: Number(newProduct.price),
+        inStock: true,
+        createdAt: Date.now(),
+        image1: '/images/appalam-packaging.jpg',
+        image2: '/images/appalam-raw.png',
+        isNew: true
+      });
+      setNewProduct({ name: '', price: '', category: 'Appalam', description: '' });
+      toast.success('Product added successfully!');
+    } catch (e) {
+      toast.error('Failed to add product');
+    } finally {
+      setAddingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm('Delete this product permanently?')) return;
+    try {
+      await remove(ref(rtdb, `products/${id}`));
+      toast.success('Product deleted');
+    } catch (e) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const handleToggleStock = async (id, currentStatus) => {
+    try {
+      await update(ref(rtdb, `products/${id}`), { inStock: !currentStatus });
+      toast.success(`Stock status updated`);
+    } catch (e) {
+      toast.error('Failed to update stock');
+    }
+  };
+
   const SidebarItem = ({ id, label, icon: Icon }) => (
     <button 
       onClick={() => setActiveTab(id)}
@@ -172,6 +225,7 @@ export default function AdminDashboard() {
         <nav className="flex-grow">
           <SidebarItem id="overview" label="Overview" icon={LayoutDashboard} />
           <SidebarItem id="orders" label="Orders" icon={ShoppingCart} />
+          <SidebarItem id="products" label="Products" icon={Package} />
           <SidebarItem id="contacts" label="Messages" icon={MessageSquare} />
           <SidebarItem id="reviews" label="Reviews" icon={Star} />
           <SidebarItem id="customers" label="Customers" icon={Users} />
@@ -455,6 +509,112 @@ export default function AdminDashboard() {
                    </tbody>
                 </table>
              </div>
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="space-y-8">
+            {/* Add New Product Form */}
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8">
+              <h3 className="text-xl font-bold text-secondary mb-6">Add New Product</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  placeholder="Product Name *"
+                  value={newProduct.name}
+                  onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                  className="p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-primary font-medium text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="Price per kg (₹) *"
+                  value={newProduct.price}
+                  onChange={e => setNewProduct({...newProduct, price: e.target.value})}
+                  className="p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-primary font-medium text-sm"
+                />
+                <input
+                  placeholder="Category (e.g. Appalam)"
+                  value={newProduct.category}
+                  onChange={e => setNewProduct({...newProduct, category: e.target.value})}
+                  className="p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-primary font-medium text-sm"
+                />
+                <input
+                  placeholder="Description"
+                  value={newProduct.description}
+                  onChange={e => setNewProduct({...newProduct, description: e.target.value})}
+                  className="p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-primary font-medium text-sm"
+                />
+              </div>
+              <button
+                onClick={handleAddProduct}
+                disabled={addingProduct}
+                className="mt-4 bg-primary text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-60"
+              >
+                <Plus size={18} /> {addingProduct ? 'Adding...' : 'Add Product'}
+              </button>
+            </div>
+
+            {/* Products List */}
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-8 border-b border-gray-50">
+                <h3 className="text-xl font-bold text-secondary">Product Inventory ({products.length})</h3>
+              </div>
+              {products.length === 0 ? (
+                <div className="p-12 text-center text-gray-400">
+                  <Package size={48} className="mx-auto mb-4 opacity-20" />
+                  <p className="font-medium">No products added yet. Add your first product above.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-widest">
+                      <tr>
+                        <th className="px-8 py-5">Product Name</th>
+                        <th className="px-8 py-5">Category</th>
+                        <th className="px-8 py-5">Price / kg</th>
+                        <th className="px-8 py-5">Stock Status</th>
+                        <th className="px-8 py-5">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {products.map(product => (
+                        <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-8 py-5">
+                            <p className="font-bold text-secondary text-sm">{product.name}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{product.description}</p>
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className="bg-primary/10 text-primary text-[10px] font-bold uppercase px-3 py-1 rounded-full">{product.category}</span>
+                          </td>
+                          <td className="px-8 py-5 font-bold text-primary">₹{product.price}</td>
+                          <td className="px-8 py-5">
+                            <button
+                              onClick={() => handleToggleStock(product._id, product.inStock)}
+                              className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl transition-all ${
+                                product.inStock !== false
+                                  ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                                  : 'bg-red-50 text-red-500 hover:bg-red-100'
+                              }`}
+                            >
+                              {product.inStock !== false ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                              {product.inStock !== false ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                          </td>
+                          <td className="px-8 py-5">
+                            <button
+                              onClick={() => handleDeleteProduct(product._id)}
+                              className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                              title="Delete Product"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
