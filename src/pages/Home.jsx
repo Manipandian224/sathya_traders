@@ -2,12 +2,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import { getFeaturedProducts } from '../data/products';
 
-const FEATURED_PRODUCTS = [
-  { id: '1', name: 'New Star Appalam (2.5 Small)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 2.5 (Small).', isNew: true, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80' },
-  { id: '2', name: 'New Star Appalam (3.5 Medium)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 3.5 (Medium).', isNew: false, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80' },
-  { id: '3', name: 'New Star Appalam (4.5 Large)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 4.5 (Large).', isNew: true, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80' },
-];
+const FEATURED_PRODUCTS = getFeaturedProducts();
 
 export default function Home() {
   return (

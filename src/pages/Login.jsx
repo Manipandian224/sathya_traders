@@ -21,11 +21,17 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
-      await loginWithGoogle();
-      toast.success('Successfully logged in!');
-      navigate('/');
+      const user = await loginWithGoogle();
+      if (user) {
+        const adminEmails = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || ['admin@sathyatraders.com'];
+        if (adminEmails.includes(user.email)) {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
     } catch (error) {
-      toast.error('Google sign-in failed.');
+      // Errors are handled in AuthContext
     } finally {
       setIsSubmitting(false);
     }

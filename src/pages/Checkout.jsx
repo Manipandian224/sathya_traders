@@ -9,7 +9,8 @@ import { rtdb, auth, functions } from '../firebase/config';
 import { ref, push, set, serverTimestamp } from 'firebase/database';
 import { httpsCallable } from 'firebase/functions';
 import AddressManager from '../components/AddressManager';
-import emailjs from '@emailjs/browser';
+import API from '../api/api';
+import { load } from "@cashfreepayments/cashfree-js";
 
 export default function Checkout() {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -17,7 +18,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('RAZORPAY');
+  const [paymentMethod, setPaymentMethod] = useState('CASHFREE');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState('');
@@ -40,97 +41,104 @@ export default function Checkout() {
     const totalAmount = cartTotal > 500 ? cartTotal : cartTotal + 50;
 
     try {
-      if (paymentMethod === 'RAZORPAY') {
-        // 1. Call Cloud Function to create Razorpay Order
-        const createOrderFn = httpsCallable(functions, 'createRazorpayOrder');
-        const { data: orderResponse } = await createOrderFn({ 
+      if (paymentMethod === 'CASHFREE') {
+        const generatedOrderId = `SA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        
+        // 1. Save order to DB first as 'Pending'
+        await saveOrderToDB('', generatedOrderId);
+
+        // 2. Create Cashfree Session
+        const { data: sessionResponse } = await API.post('/orders/create-session', { 
           amount: totalAmount,
-          receipt: `order_${Date.now()}`
+          customer_id: currentUser.uid,
+          customer_phone: selectedAddress.phone,
+          customer_email: currentUser.email,
+          order_id: generatedOrderId
         });
 
-        // 2. Open Razorpay Modal
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: orderResponse.amount,
-          currency: orderResponse.currency,
-          name: "Sathya Traders",
-          description: "Order Payment",
-          order_id: orderResponse.id,
-          handler: async function (response) {
-            // Payment Success callback
-            await saveOrderToDB(response.razorpay_payment_id);
-          },
-          prefill: {
-            name: auth.currentUser.displayName || '',
-            email: auth.currentUser.email || '',
-            contact: selectedAddress.phone || ''
-          },
-          theme: { color: "#F97316" }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          toast.error("Payment failed. Please try again.");
-          setIsProcessing(false);
+        const cashfree = await load({
+          mode: import.meta.env.VITE_CASHFREE_MODE || "sandbox"
         });
-        rzp.open();
+
+        await cashfree.checkout({
+          paymentSessionId: sessionResponse.payment_session_id,
+          redirectTarget: "_self"
+        });
       } else {
         // Direct COD or Manual UPI/Bank
         await saveOrderToDB();
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to process order. Please check if you have upgraded to Firebase Blaze Plan.");
+      console.error("Payment initialization error:", error);
+      toast.error("Could not initialize payment. Please check if the backend server is running and configured correctly.");
       setIsProcessing(false);
     }
   };
 
-  const saveOrderToDB = async (paymentId = '') => {
+  const saveOrderToDB = async (paymentId = '', externalOrderId = null) => {
     try {
-      const orderRef = push(ref(rtdb, 'orders'));
-      const orderData = {
-        userId: auth.currentUser.uid,
-        userName: auth.currentUser.displayName || 'Guest',
-        products: cartItems.map(item => ({
-          productId: item.id,
+      // 1. Use external Order ID or generate a new one
+      const orderId = externalOrderId || `SA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const orderPayload = {
+        orderId: orderId,
+        userName: selectedAddress?.fullName || auth.currentUser?.displayName || 'Guest',
+        userEmail: auth.currentUser?.email || '',
+        phone: selectedAddress?.phone || '',
+        product: cartItems.map(item => `${item.name} (${item.quantity})`).join(', '),
+        totalAmount: cartTotal > 500 ? cartTotal : cartTotal + 50,
+        shippingAddress: {
+          fullName: selectedAddress?.fullName || '',
+          street: selectedAddress?.street || '',
+          city: selectedAddress?.city || '',
+          state: selectedAddress?.state || '',
+          pincode: selectedAddress?.pincode || '',
+          landmark: selectedAddress?.landmark || ''
+        },
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'COD' ? 'Pending' : (paymentId ? 'Paid' : 'Pending'),
+        cashfreePaymentId: paymentId || '',
+        cartItems: cartItems.map(item => ({
+          id: item.id,
           name: item.name,
           price: item.price,
-          quantity: item.quantity
+          quantity: item.quantity,
+          image: item.image1 || ''
         })),
-        totalAmount: cartTotal > 500 ? cartTotal : cartTotal + 50,
-        shippingAddress: selectedAddress,
-        paymentMethod: paymentMethod,
-        razorpayPaymentId: paymentId,
+        userId: auth.currentUser?.uid,
         status: 'Pending',
-        paymentStatus: (paymentMethod === 'COD' || paymentMethod === 'Bank' || paymentMethod === 'UPI') ? 'Pending' : 'Completed',
         createdAt: serverTimestamp()
       };
 
-      await set(orderRef, orderData);
-      setOrderId(orderRef.key);
+      // 2. Save directly to Firebase Realtime Database (Bypasses Blaze Plan restriction)
+      const orderRef = ref(rtdb, `orders/${orderId}`);
+      await set(orderRef, orderPayload);
+      console.log("✅ Order saved to Firebase RTDB");
 
-      // Send Order Notification Email
+      // 3. Send WhatsApp Notification via our Node.js Backend
       try {
-        await emailjs.send(
-          import.meta.env.VITE_EMAILJS_SERVICE_ID,
-          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-          {
-            from_name: orderData.userName,
-            from_email: currentUser?.email || 'N/A',
-            subject: `New Order Received - ${orderRef.key}`,
-            message: `New order of ₹${orderData.totalAmount} placed by ${orderData.userName}. Payment Method: ${orderData.paymentMethod}`,
-            to_name: "Sathya Traders Owner"
-          }
-        );
-      } catch (err) {
-        console.error("Order notification email failed:", err);
+        await API.post('/send-order', {
+          name: orderPayload.userName,
+          product: orderPayload.product,
+          price: orderPayload.totalAmount,
+          phone: orderPayload.phone,
+          address: `${orderPayload.shippingAddress.street}, ${orderPayload.shippingAddress.city}`,
+          orderId: orderId
+        });
+        console.log("✅ WhatsApp notification request sent");
+      } catch (notifyError) {
+        console.error("WhatsApp notification failed:", notifyError);
+        // We don't fail the order if notification fails, just log it
       }
-
+      
+      setOrderId(orderId);
       clearCart();
       setIsSuccess(true);
       toast.success("Order placed successfully!");
+      
     } catch (error) {
-      toast.error("Error saving order details.");
+      console.error("Order process error:", error);
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -202,7 +210,7 @@ export default function Checkout() {
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     {[
-                      { id: 'RAZORPAY', label: 'Online Pay', icon: CreditCard },
+                      { id: 'CASHFREE', label: 'Online Pay', icon: CreditCard },
                       { id: 'UPI', label: 'UPI / QR', icon: Wallet },
                       { id: 'Bank', label: 'Bank Transfer', icon: Landmark },
                       { id: 'COD', label: 'Cash on Delivery', icon: Truck }
@@ -247,12 +255,12 @@ export default function Checkout() {
                    {cartItems.map(item => (
                       <div key={item.id} className="flex justify-between items-center text-sm">
                          <div className="flex items-center gap-4">
-                            <div className="bg-gray-100 rounded-xl w-10 h-10 flex items-center justify-center text-secondary font-bold">
-                               {item.quantity}
+                            <div className="bg-gray-100 rounded-xl w-14 h-14 flex items-center justify-center text-secondary font-bold overflow-hidden border border-gray-100 p-1">
+                               <img src={item.image1 || item.image} alt={item.name} className="w-full h-full object-cover rounded-lg mix-blend-multiply" />
                             </div>
                             <div>
                                <p className="font-bold text-secondary line-clamp-1">{item.name}</p>
-                               <p className="text-gray-400 text-xs">₹{item.price} per pack</p>
+                               <p className="text-gray-400 text-xs">₹{item.price} x {item.quantity}</p>
                             </div>
                          </div>
                          <strong className="text-secondary">₹{item.price * item.quantity}</strong>

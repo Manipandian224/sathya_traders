@@ -5,9 +5,11 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
-import { ref, set } from 'firebase/database';
+import { ref, set, get, child } from 'firebase/database';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -25,8 +27,30 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
-        const adminEmails = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || ['admin@sathyatraders.com'];
-        setIsAdmin(adminEmails.includes(user.email));
+        const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || 'admin@sathyatraders.com').split(',').map(e => e.trim());
+        const isUserAdmin = adminEmails.includes(user.email);
+        setIsAdmin(isUserAdmin);
+
+        // Auto-sync admin role in database if they are an admin
+        if (isUserAdmin) {
+          const userRef = ref(rtdb, 'users/' + user.uid);
+          get(userRef).then((snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              if (data.role !== 'admin') {
+                set(ref(rtdb, 'users/' + user.uid + '/role'), 'admin');
+              }
+            } else {
+              // Create record if it doesn't exist (e.g. first time admin login)
+              set(userRef, {
+                name: user.displayName || 'Admin',
+                email: user.email,
+                role: 'admin',
+                createdAt: Date.now()
+              });
+            }
+          });
+        }
       } else {
         setCurrentUser(null);
         setIsAdmin(false);
@@ -70,6 +94,49 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const { user } = await signInWithPopup(auth, provider);
+      
+      const userRef = ref(rtdb, 'users/' + user.uid);
+      const snapshot = await get(userRef);
+      
+      if (!snapshot.exists()) {
+        await set(userRef, {
+          name: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          role: 'user',
+          createdAt: Date.now()
+        });
+      } else {
+        const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || 'admin@sathyatraders.com').split(',').map(e => e.trim());
+        const isUserAdmin = adminEmails.includes(user.email);
+        
+        await set(userRef, {
+          ...snapshot.val(),
+          name: user.displayName,
+          photoURL: user.photoURL,
+          role: isUserAdmin ? 'admin' : (snapshot.val().role || 'user'),
+          lastLogin: Date.now()
+        });
+      }
+      
+      toast.success(`Welcome back, ${user.displayName}!`);
+      return user;
+    } catch (error) {
+      if (error.code === 'auth/popup-blocked') {
+        toast.error("Popup was blocked by your browser. Please allow popups for this site.");
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // No toast for cancellation
+      } else {
+        toast.error(error.message);
+      }
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -85,6 +152,7 @@ export function AuthProvider({ children }) {
       isAdmin, 
       signup, 
       loginWithEmail, 
+      loginWithGoogle,
       logout, 
       loading 
     }}>

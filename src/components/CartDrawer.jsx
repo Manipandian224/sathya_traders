@@ -63,7 +63,7 @@ export default function CartDrawer() {
                        >
                           <X size={14} />
                        </button>
-                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg mix-blend-multiply" />
+                      <img src={item.image || item.image1} alt={item.name} className="w-20 h-20 object-cover rounded-lg mix-blend-multiply" />
                       <div className="flex flex-col flex-grow justify-between">
                         <div>
                           <h4 className="font-bold text-secondary text-sm line-clamp-1">{item.name}</h4>

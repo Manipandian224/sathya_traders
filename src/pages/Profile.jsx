@@ -455,7 +455,10 @@ export default function Profile() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => {
+                      if (item.id === 'orders') navigate('/orders');
+                      else setActiveTab(item.id);
+                    }}
                     className={`flex items-center gap-3 p-4 lg:p-5 transition-all text-sm font-bold min-w-[max-content] lg:min-w-0 border-b border-gray-50 last:border-b-0
                       ${isActive 
                         ? 'bg-primary/5 text-primary border-r-0 lg:border-l-4 lg:border-l-primary' 

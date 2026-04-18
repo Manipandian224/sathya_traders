@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
 import Contact from './pages/Contact';
+import Orders from './pages/Orders';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
@@ -28,6 +29,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/orders" element={<Orders />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </MainLayout>

@@ -36,3 +36,8 @@ firedebug.log
 # Build outputs
 dist/
 build/
+
+# Backend specific
+server/.env
+server/node_modules/
+server/serviceAccountKey.json

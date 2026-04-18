@@ -10,11 +10,24 @@ import {
 import { rtdb } from '../firebase/config';
 import { ref, onValue, update, remove, query, limitToLast } from 'firebase/database';
 import toast from 'react-hot-toast';
+import { FileText } from 'lucide-react';
+import InvoiceModal from '../components/InvoiceModal';
 
 export default function AdminDashboard() {
   const { currentUser, isAdmin, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
+
+  // Debugging logs for blank screen troubleshooting
+  useEffect(() => {
+    console.log("AdminDashboard: Auth State Check", { 
+      hasUser: !!currentUser, 
+      email: currentUser?.email,
+      isAdmin, 
+      authLoading 
+    });
+  }, [currentUser, isAdmin, authLoading]);
   
   // Data states
   const [orders, setOrders] = useState([]);
@@ -38,6 +51,7 @@ export default function AdminDashboard() {
   }
 
   if (!currentUser || !isAdmin) {
+    console.warn("AdminDashboard: Unauthorized access attempt or auth mismatch. Redirecting to login.");
     return <Navigate to="/login" />;
   }
 
@@ -104,6 +118,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to delete this order record?")) return;
+    try {
+      await remove(ref(rtdb, `orders/${orderId}`));
+      toast.success("Order record deleted");
+    } catch (error) {
+      toast.error("Failed to delete order");
+    }
+  };
+
   const handleMarkContactRead = async (id) => {
     try {
       await update(ref(rtdb, `contacts/${id}`), { status: 'read' });
@@ -156,10 +180,10 @@ export default function AdminDashboard() {
         <div className="p-6 border-t border-gray-50">
            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl">
               <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-bold uppercase text-sm">
-                 {currentUser.name.charAt(0)}
+                 {(currentUser.displayName || currentUser.email || 'A').charAt(0)}
               </div>
               <div className="overflow-hidden">
-                 <p className="text-sm font-bold text-secondary truncate">{currentUser.name}</p>
+                 <p className="text-sm font-bold text-secondary truncate">{currentUser.displayName || currentUser.email || 'Admin User'}</p>
                  <p className="text-[10px] text-gray-400 uppercase tracking-widest">Admin Access</p>
               </div>
            </div>
@@ -283,12 +307,12 @@ export default function AdminDashboard() {
                              <td className="px-8 py-6 font-bold text-primary">₹{order.totalAmount}</td>
                              <td className="px-8 py-6 text-xs text-gray-400">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Pending'}</td>
                              <td className="px-8 py-6">
-                                <p className={`text-xs font-bold ${order.paymentStatus === 'Completed' ? 'text-green-600' : 'text-orange-500'}`}>
+                                 <p className={`text-xs font-bold ${order.paymentStatus === 'Paid' ? 'text-green-600' : 'text-orange-500'}`}>
                                    {order.paymentStatus || 'Pending'}
-                                </p>
-                                {order.razorpayPaymentId && (
-                                  <p className="text-[10px] text-gray-400 font-mono mt-1">ID: {order.razorpayPaymentId}</p>
-                                )}
+                                 </p>
+                                 {order.cashfreePaymentId && (
+                                   <p className="text-[10px] text-gray-400 font-mono mt-1">ID: {order.cashfreePaymentId}</p>
+                                 )}
                              </td>
                              <td className="px-8 py-6">
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -300,18 +324,32 @@ export default function AdminDashboard() {
                                    {order.status}
                                 </span>
                              </td>
-                            <td className="px-8 py-6">
-                               <select 
-                                 onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
-                                 value={order.status}
-                                 className="text-xs bg-gray-100 border-none rounded-lg p-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                               >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Shipped">Shipped</option>
-                                  <option value="Delivered">Delivered</option>
-                                  <option value="Cancelled">Cancelled</option>
-                               </select>
-                            </td>
+                             <td className="px-8 py-6 flex items-center gap-2">
+                                <select 
+                                  onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
+                                  value={order.status}
+                                  className="text-xs bg-gray-100 border-none rounded-lg p-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                                >
+                                   <option value="Pending">Pending</option>
+                                   <option value="Shipped">Shipped</option>
+                                   <option value="Delivered">Delivered</option>
+                                   <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <button 
+                                  onClick={() => setSelectedOrderForInvoice(order)}
+                                  className="p-2 text-gray-300 hover:text-primary transition-colors"
+                                  title="Generate Bill"
+                                >
+                                  <FileText size={18} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteOrder(order._id)}
+                                  className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                  title="Delete Order"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                             </td>
                          </tr>
                       ))}
                    </tbody>
@@ -419,6 +457,12 @@ export default function AdminDashboard() {
              </div>
           </div>
         )}
+
+        <InvoiceModal 
+          isOpen={!!selectedOrderForInvoice} 
+          onClose={() => setSelectedOrderForInvoice(null)} 
+          order={selectedOrderForInvoice} 
+        />
       </div>
     </div>
   );

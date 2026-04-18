@@ -2,24 +2,35 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReviewSection from '../components/ReviewSection';
-
-const ALL_PRODUCTS = [
-  { id: '1', name: 'New Star Appalam (2.5 Small)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 2.5 (Small). Pure ingredients and traditional recipe. Available in bulk from 1kg up to 100kg.', isNew: true, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80', stock: 1000 },
-  { id: '2', name: 'New Star Appalam (3.5 Medium)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 3.5 (Medium). Pure ingredients and traditional recipe. Available in bulk from 1kg up to 100kg.', isNew: false, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80', stock: 1000 },
-  { id: '3', name: 'New Star Appalam (4.5 Large)', price: 160, category: 'Appalam', description: 'Premium homemade New Star Appalam. Size 4.5 (Large). Pure ingredients and traditional recipe. Available in bulk from 1kg up to 100kg.', isNew: true, image: 'https://images.unsplash.com/photo-1596541223130-f472280620ed?auto=format&fit=crop&w=600&q=80', stock: 1000 },
-];
+import { ALL_PRODUCTS } from '../data/products';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [weight, setWeight] = React.useState(1);
+  const [dbStats, setDbStats] = React.useState({ averageRating: 0, totalReviews: 0 });
   
   // Find product by ID
-  const product = ALL_PRODUCTS.find(p => p.id === id) || ALL_PRODUCTS[0];
+  const baseProduct = ALL_PRODUCTS.find(p => p.id === id) || ALL_PRODUCTS[0];
+  const product = { ...baseProduct, ...dbStats };
+
+  React.useEffect(() => {
+    import('../firebase/config').then(({ rtdb }) => {
+      import('firebase/database').then(({ ref, onValue }) => {
+        const productRef = ref(rtdb, `products/${id}`);
+        const unsub = onValue(productRef, (snapshot) => {
+          if (snapshot.exists()) {
+            setDbStats(snapshot.val());
+          }
+        });
+        return () => unsub();
+      });
+    });
+  }, [id]);
 
   return (
     <div className="bg-neutral-bg min-h-screen py-16">
@@ -37,7 +48,8 @@ export default function ProductDetail() {
                  initial={{ opacity: 0, scale: 0.9 }}
                  animate={{ opacity: 1, scale: 1 }}
                  transition={{ duration: 0.5 }}
-                 src={product.image}
+                 src={product.image1}
+                 alt={product.name}
                  className="w-full max-w-md object-cover mix-blend-multiply drop-shadow-xl"
                />
                {product.isNew && (
@@ -50,9 +62,30 @@ export default function ProductDetail() {
             {/* Details Section */}
             <div className="w-full md:w-1/2 p-10 md:p-16 flex flex-col justify-center">
                <div className="text-primary font-bold tracking-widest uppercase text-sm mb-2">{product.category}</div>
-               <h1 className="text-4xl md:text-5xl font-heading font-bold text-secondary mb-4">{product.name}</h1>
-               <div className="text-3xl font-bold text-secondary mb-2">₹{product.price * weight}</div>
-               <div className="text-sm text-gray-400 mb-6">Price: ₹160 / kg</div>
+               <div className="flex items-center gap-4 mb-4">
+                  <h1 className="text-4xl md:text-5xl font-heading font-bold text-secondary">{product.name}</h1>
+                  {product.totalReviews > 0 && (
+                    <div className="hidden md:flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
+                      <div className="flex text-yellow-400">
+                        {Math.round(product.averageRating)} <Star size={14} fill="currentColor" className="ml-1" />
+                      </div>
+                      <span className="text-xs font-bold text-secondary">({product.totalReviews})</span>
+                    </div>
+                  )}
+               </div>
+               
+               <div className="flex items-center gap-4 mb-4">
+                  <div className="text-3xl font-bold text-secondary">₹{product.price * weight}</div>
+                  {product.totalReviews > 0 && (
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <div className="flex text-yellow-400">
+                        {[1,2,3,4,5].map(s => <Star key={s} size={14} fill={s <= Math.round(product.averageRating) ? "currentColor" : "none"} />)}
+                      </div>
+                      <span className="text-gray-400 font-medium">({product.totalReviews} customer reviews)</span>
+                    </div>
+                  )}
+               </div>
+               <div className="text-sm text-gray-400 mb-6 font-medium">Standard Price: ₹{product.price} / kg</div>
                
                <p className="text-gray-600 text-lg mb-8 leading-relaxed">
                  {product.description}
