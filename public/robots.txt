@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /profile
+Disallow: /orders
+Disallow: /checkout
+Disallow: /admin
+
+Sitemap: https://sathyatraders.in/sitemap.xml
