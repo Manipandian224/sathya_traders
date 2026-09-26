@@ -12,6 +12,7 @@ import { ref, onValue, update, remove, query, limitToLast } from 'firebase/datab
 import toast from 'react-hot-toast';
 import { FileText } from 'lucide-react';
 import InvoiceModal from '../components/InvoiceModal';
+import SEO from '../components/SEO';
 
 export default function AdminDashboard() {
   const { currentUser, isAdmin, loading: authLoading } = useAuth();
@@ -213,6 +214,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="bg-neutral-bg min-h-screen flex">
+      <SEO title="Admin Dashboard | Sathya Traders" noindex={true} />
       {/* Sidebar */}
       <div className="w-72 bg-white shadow-xl min-h-screen sticky top-0 flex flex-col pt-8">
         <div className="px-6 mb-10 flex items-center gap-3">

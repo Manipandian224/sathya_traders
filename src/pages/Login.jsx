@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LogIn, ShieldCheck, UserPlus, Mail, Lock, User, Phone } from 'lucide-react';
 
+import SEO from '../components/SEO';
+
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -76,6 +78,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-neutral-bg flex items-center justify-center px-4 py-20">
+      <SEO title="Account Login | Sathya Traders" noindex={true} />
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
         
         {/* Header Section */}

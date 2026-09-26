@@ -11,6 +11,8 @@ import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+import SEO from '../components/SEO';
+
 const STATUS_CONFIG = {
   'Pending': { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, step: 1 },
   'Processing': { color: 'text-blue-600', bg: 'bg-blue-100', icon: List, step: 2 },
@@ -71,6 +73,7 @@ export default function Orders() {
 
   return (
     <div className="bg-neutral-bg min-h-screen py-24 px-4 sm:px-6 lg:px-8">
+      <SEO title="My Orders | Sathya Traders" noindex={true} />
       <div className="max-w-5xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>

@@ -11,6 +11,8 @@ import { updateProfile } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
+import SEO from '../components/SEO';
+
 export default function Profile() {
   const { currentUser, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
@@ -424,6 +426,7 @@ export default function Profile() {
 
   return (
     <div className="bg-neutral-bg min-h-screen pt-24 pb-20">
+      <SEO title="My Account | Sathya Traders" noindex={true} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Page Header */}

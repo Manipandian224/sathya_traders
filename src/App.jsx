@@ -10,6 +10,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
 import Contact from './pages/Contact';
 import Orders from './pages/Orders';
+import AppalamInMadurai from './pages/AppalamInMadurai';
+import NotFound from './pages/NotFound';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
@@ -21,21 +23,24 @@ function App() {
         <Router>
           <Toaster position="top-right" />
           <MainLayout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Routes>
-        </MainLayout>
-      </Router>
-    </CartProvider>
-  </AuthProvider>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/appalam-in-madurai" element={<AppalamInMadurai />} />
+              <Route path="/about" element={<AppalamInMadurai />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MainLayout>
+        </Router>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

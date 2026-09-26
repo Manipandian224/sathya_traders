@@ -1,11 +1,41 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Star } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Star, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReviewSection from '../components/ReviewSection';
 import { ALL_PRODUCTS } from '../data/products';
+import SEO from '../components/SEO';
+
+const getProductTitleAndH1 = (product) => {
+  if (product.id === '1') {
+    return {
+      title: 'New Star Appalam Small | Sathya Traders',
+      h1: 'New Star Appalam – Small',
+      description: 'Buy New Star Appalam (2.5 Small) online from Sathya Traders in Madurai. Premium homemade appalam made with pure ingredients and traditional recipe.'
+    };
+  }
+  if (product.id === '2') {
+    return {
+      title: 'New Star Appalam Medium | Sathya Traders',
+      h1: 'New Star Appalam – Medium',
+      description: 'Buy New Star Appalam (3.5 Medium) online from Sathya Traders in Madurai. Premium homemade appalam made with pure ingredients and traditional recipe.'
+    };
+  }
+  if (product.id === '3') {
+    return {
+      title: 'New Star Appalam Large | Sathya Traders',
+      h1: 'New Star Appalam – Large',
+      description: 'Buy New Star Appalam (4.5 Large) online from Sathya Traders in Madurai. Premium homemade appalam made with pure ingredients and traditional recipe.'
+    };
+  }
+  return {
+    title: `${product.name} | Sathya Traders`,
+    h1: product.name,
+    description: product.description
+  };
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -15,10 +45,10 @@ export default function ProductDetail() {
   const [dbStats, setDbStats] = React.useState({ averageRating: 0, totalReviews: 0 });
   
   // Find product by ID
-  const baseProduct = ALL_PRODUCTS.find(p => p.id === id) || ALL_PRODUCTS[0];
-  const product = { ...baseProduct, ...dbStats };
+  const baseProduct = ALL_PRODUCTS.find(p => p.id === id);
 
   React.useEffect(() => {
+    if (!baseProduct) return;
     import('../firebase/config').then(({ rtdb }) => {
       import('firebase/database').then(({ ref, onValue }) => {
         const productRef = ref(rtdb, `products/${id}`);
@@ -30,14 +60,108 @@ export default function ProductDetail() {
         return () => unsub();
       });
     });
-  }, [id]);
+  }, [id, baseProduct]);
+
+  // If product ID is invalid, return 404 experience
+  if (!baseProduct) {
+    return (
+      <div className="bg-neutral-bg min-h-screen py-24 flex items-center justify-center">
+        <SEO
+          title="Product Not Found | Sathya Traders"
+          description="The requested appalam product does not exist."
+          noindex={true}
+        />
+        <div className="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 text-center max-w-lg mx-auto">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <AlertCircle size={32} />
+          </div>
+          <h1 className="text-3xl font-heading font-bold text-secondary mb-3">Product Not Found</h1>
+          <p className="text-gray-500 mb-8">
+            Sorry, the appalam product you are looking for does not exist or has been removed.
+          </p>
+          <Link
+            to="/shop"
+            className="bg-primary hover:bg-primary-dark text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-all inline-block"
+          >
+            Back to Appalam Shop
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const product = { ...baseProduct, ...dbStats };
+  const { title, h1, description: metaDescription } = getProductTitleAndH1(product);
+  const canonicalUrl = `https://sathyatraders.in/product/${product.id}`;
+  const imageUrl = `https://sathyatraders.in${product.image1}`;
+
+  const productSchema = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      'name': product.name,
+      'image': [imageUrl],
+      'description': product.description,
+      'sku': product.id,
+      'offers': {
+        '@type': 'Offer',
+        'priceCurrency': 'INR',
+        'price': product.price.toString(),
+        'availability': 'https://schema.org/InStock',
+        'url': canonicalUrl
+      }
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': 'https://sathyatraders.in/'
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Shop',
+          'item': 'https://sathyatraders.in/shop'
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': product.name,
+          'item': canonicalUrl
+        }
+      ]
+    }
+  ];
 
   return (
     <div className="bg-neutral-bg min-h-screen py-16">
+      <SEO
+        title={title}
+        description={metaDescription}
+        canonical={canonicalUrl}
+        keywords={`${product.name}, New Star Appalam, Sathya Traders, Appalam Madurai, Buy Appalam Online`}
+        ogType="product"
+        ogImage={product.image1}
+        schema={productSchema}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <button onClick={() => navigate(-1)} className="flex items-center text-gray-500 hover:text-primary transition-colors mb-8 group">
-          <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" /> Back
+        <button onClick={() => navigate('/shop')} className="flex items-center text-gray-500 hover:text-primary transition-colors mb-8 group cursor-pointer">
+          <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" /> Back to Shop
         </button>
+
+        {/* Visual Breadcrumb Navigation */}
+        <nav className="text-xs text-gray-500 mb-6 flex items-center space-x-2">
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <span>/</span>
+          <Link to="/shop" className="hover:text-primary transition-colors">Shop</Link>
+          <span>/</span>
+          <span className="text-secondary font-semibold">{product.name}</span>
+        </nav>
         
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-12">
           <div className="flex flex-col md:flex-row">
@@ -49,7 +173,9 @@ export default function ProductDetail() {
                  animate={{ opacity: 1, scale: 1 }}
                  transition={{ duration: 0.5 }}
                  src={product.image1}
-                 alt={product.name}
+                 alt={`${product.name} from Sathya Traders Madurai`}
+                 width="400"
+                 height="400"
                  className="w-full max-w-md object-cover mix-blend-multiply drop-shadow-xl"
                />
                {product.isNew && (
@@ -63,7 +189,7 @@ export default function ProductDetail() {
             <div className="w-full md:w-1/2 p-10 md:p-16 flex flex-col justify-center">
                <div className="text-primary font-bold tracking-widest uppercase text-sm mb-2">{product.category}</div>
                <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-4xl md:text-5xl font-heading font-bold text-secondary">{product.name}</h1>
+                  <h1 className="text-4xl md:text-5xl font-heading font-bold text-secondary">{h1}</h1>
                   {product.totalReviews > 0 && (
                     <div className="hidden md:flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
                       <div className="flex text-yellow-400">
@@ -119,7 +245,7 @@ export default function ProductDetail() {
                <div className="space-y-4 mb-10">
                  <div className="flex items-center text-gray-600">
                     <ShieldCheck className="text-green-500 mr-3" />
-                    <span>100% Authentic & Homemade</span>
+                    <span>100% Authentic & Homemade in Madurai</span>
                  </div>
                  <div className="flex items-center text-gray-600">
                     <Truck className="text-primary mr-3" />
@@ -132,7 +258,7 @@ export default function ProductDetail() {
                    addToCart(product, weight);
                    toast.success(`${product.name} (${weight}kg) added to cart!`);
                  }}
-                 className="bg-primary hover:bg-primary-dark text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center justify-center w-full md:w-auto active:scale-95"
+                 className="bg-primary hover:bg-primary-dark text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center justify-center w-full md:w-auto active:scale-95 cursor-pointer"
                >
                  <ShoppingBag className="mr-2" /> Add {weight} kg to Cart
                </button>

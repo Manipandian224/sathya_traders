@@ -11,6 +11,7 @@ import { httpsCallable } from 'firebase/functions';
 import AddressManager from '../components/AddressManager';
 import API from '../api/api';
 import { load } from "@cashfreepayments/cashfree-js";
+import SEO from '../components/SEO';
 
 export default function Checkout() {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -191,6 +192,7 @@ export default function Checkout() {
 
   return (
     <div className="bg-neutral-bg min-h-screen py-16">
+      <SEO title="Checkout | Sathya Traders" noindex={true} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12">
           
